@@ -1,15 +1,9 @@
-import importlib
 import os
-import pandas as pd
+import xlrd
 
 import pytest
 
 from fixture.application import Application
-
-
-fixture = None
-target = None
-
 
 
 @pytest.fixture(scope='session')
@@ -20,19 +14,20 @@ def app(request):
 
 
 def pytest_generate_tests(metafunc):
-    for fixture in metafunc.fixturenames:
-        if fixture.startswith("data_"):
-            testdata = load_from_module(fixture[3:])
-            metafunc.parametrize(fixture, testdata, ids=[str(x) for x in testdata])
-        elif fixture.startswith("xl_"):
-            testdata = load_from_xl(fixture[3:])
-            metafunc.parametrize(fixture, testdata, ids=[str(x) for x in testdata])
+    if "xl_groups" in metafunc.fixturenames:
+        testdata = load_from_xl()
+        metafunc.parametrize("xl_groups", testdata, ids=[str(x) for x in testdata])
 
 
-def load_from_module(module):
-    return importlib.import_module("data.%s" % module).testdata
-
-
-def load_from_xl(file):
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data\\%s.xls" % file), encoding='latin-1') as f:
-        return f.read()
+def load_from_xl():
+    groups = []
+    rows_count = 5
+    project_dir = os.path.dirname(os.path.realpath(__file__))
+    xl_data_file = os.path.join(project_dir, "data/groups.xls")
+    wb = xlrd.open_workbook(xl_data_file)
+    sheet = wb.sheet_by_index(0)
+    sheet.cell_value(0, 0)
+    for i in range(rows_count):
+        groups.append(sheet.
+                      cell_value(i, 0))
+    return groups
